@@ -89,10 +89,11 @@ no Lua or DB error is logged, and its `PrintLine` hook coexists with this plugin
 
 ## 4. What is *not* verified
 
-- **Whether that echo line reproduces on this build.** Its text is known from a user
-  screenshot — `r_ColorGradingChartImage Data//Textures//colorcharts//cinematic//3.a24.dds`
-  — but with the console closed the guard path emits no line here, so the suite drives the
-  same command directly instead of observing the real echo (`RE_FINDINGS.md` §3).
+- **The echo itself, inside the automated run.** The line is
+  `r_ColorGradingChartImage Data//Textures//colorcharts//cinematic//3.a24.dds` and it appears
+  only while the console is displayed (`if (!bSilentMode && GetStatus())`). The suite runs
+  with the console closed, so it drives the same command through the guard and asserts on
+  `commandsSilenced` instead of on the echoed line (`RE_FINDINGS.md` §3).
 - **`PrintLinePlus`.** Its call surface was not measured, so it is not hooked.
 - **Other game builds.** Only 1.5.6 was exercised. `re/scripts/vtable_probe.py` re-checks a
   slot's semantics in one command on a new build; `gEnv` and `pConsole` are found by

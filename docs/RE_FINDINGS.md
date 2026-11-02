@@ -96,7 +96,7 @@ PrintLine hooked: console=0x1FE80C85090 vtable=0x7FF83B34F850 slot=0x7FF83B34F92
 在二进制里编译成唯一的 `call qword ptr [rax+0D0h]`（`0xD0 = 26*8`，文件偏移
 `0x3498D`）。它在实机上工作，等于对"头文件布局 == 零售游戏布局"做了一次行为验证。
 
-## 3. 引擎侧是否回显 chart cvar？——**不回显**（实测）
+## 3. 引擎侧什么时候回显 chart cvar？——**只在控制台打开时**
 
 `tools/lua-run.ps1` 通过 kcd2db 的 TCP Lua runner 在游戏线程执行脚本，同时
 `IConsole::PrintLine` 被本 ASI 钩住（观察模式把每一行落盘）。
@@ -112,10 +112,13 @@ PrintLine hooked: console=0x1FE80C85090 vtable=0x7FF83B34F850 slot=0x7FF83B34F92
 | `ERVWHDO.StartLUTGuard(15000)`（≈937 次执行） | 无 |
 | 交付版菜单路径 `ERVWHDO:SetLUTSettings(chart)`（自动 arm 1500000 ms 守卫，跑 20 s） | 无（守卫确实 armed：探针读到 `guardArmed=true`） |
 
-结论：**在该 1.5.6 构建 + ERVWHDO 1.0.0 上，LUT guard 每 tick 执行
-`r_ColorGradingChartImage` 不产生任何控制台输出**。所以"作者看到的那一行"不来自
-引擎对这个 cvar 的回显；它要么来自作者较新脚本里显式的 `LogAlways`，要么来自
-某个用户环境下的引擎告警。
+上面的探针表是在**控制台关闭**的状态下跑的，所以一条都不出现。控制台打开时行为相反：
+`CXConsole::ExecuteString` 的工作函数里有
+`if (!bSilentMode && this->GetStatus()) PrintLine(cmd);`，于是守卫每 16 ms 一条命令就变成
+每 16 ms 一行回显，内容正是 `r_ColorGradingChartImage Data//Textures//colorcharts//cinematic//3.a24.dds`
+（用户截图即为此现象）。也就是说：这一行来自引擎对**命令本身**的回显，不是脚本里的
+`LogAlways`，也不是维度告警（后者是另一族，见 §3.1）。这也是过滤器要钩 `ExecuteString`
+而不是只钩 `PrintLine` 的原因。
 
 ### 3.1 引擎确实会"每次应用都告警"的一族
 
