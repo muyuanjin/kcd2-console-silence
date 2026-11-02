@@ -89,10 +89,10 @@ no Lua or DB error is logged, and its `PrintLine` hook coexists with this plugin
 
 ## 4. What is *not* verified
 
-- **The exact line the LUT guard produces.** No sample of the original wording is
-  available, and this build does not reproduce a per-tick console line through the guard
-  path (see `RE_FINDINGS.md` §3). Folding plus literal rules cover the flood without
-  matching a string nobody has seen.
+- **Whether that echo line reproduces on this build.** Its text is known from a user
+  screenshot — `r_ColorGradingChartImage Data//Textures//colorcharts//cinematic//3.a24.dds`
+  — but with the console closed the guard path emits no line here, so the suite drives the
+  same command directly instead of observing the real echo (`RE_FINDINGS.md` §3).
 - **`PrintLinePlus`.** Its call surface was not measured, so it is not hooked.
 - **Other game builds.** Only 1.5.6 was exercised. `re/scripts/vtable_probe.py` re-checks a
   slot's semantics in one command on a new build; `gEnv` and `pConsole` are found by

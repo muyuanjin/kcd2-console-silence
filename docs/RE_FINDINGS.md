@@ -151,8 +151,10 @@ xref 0x1804E3E95 in sub_1804E3D88
 
 ## 5. 未取证 / 边界
 
-- 那一行的**原文**没有样本可对照。`ConsoleSilence.observe(true)` 可以在出问题的
-  机器上 30 秒内把它抓出来（见 `docs/LUA_API.md`）。
+- 那一行的原文**已知**（用户截图）：
+  `r_ColorGradingChartImage Data//Textures//colorcharts//cinematic//3.a24.dds`。
+  没取证的是"它在本机复现"：控制台关闭时该路径不产生控制台行，所以本机跑不出这一条
+  （§3 的探针表）。`ConsoleSilence.observe(true)` 可以在出问题的机器上 30 秒内确认。
 - `PrintLinePlus` 的实际调用面没统计过，因此没有钩它。
 - 只对 1.5.6 的 `WHGame.dll` 做过实机验证；`gEnv` 定位是锚点扫描（跨版本自适应），
   vtable 槽位用"槽位必须指向 `WHGame.dll` 内"做 fail-closed 校验，但换引擎大版本
