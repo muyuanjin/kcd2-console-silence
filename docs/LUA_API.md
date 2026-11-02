@@ -25,7 +25,7 @@ cs.fold(bool)    -> bool               -- collapse identical repeated lines (off
 ConsoleSilence.mute("r_ColorGradingChartImage")
 
 -- keep the first line of a burst, fold the rest (status lines stay readable)
-ConsoleSilence.mute("[ERVWHDO LUT Guard]", { action = "throttle:5000" })
+ConsoleSilence.mute("[MyMod] thread status", { action = "throttle:5000" })
 
 -- wildcard: only * and ? are special, [ ] . ( ) are ordinary characters
 ConsoleSilence.mute("*colorcharts*.dds", { kind = "wildcard" })
@@ -56,7 +56,8 @@ after the fact.
   launch.
 - **Cap of 64 rules.** `mute` throws (`full`) beyond that.
 - **Repeating `mute` is idempotent.** The same `(owner, pattern)` returns the same id
-  instead of adding a second rule.
+  instead of adding a second rule, and **does not extend `ttl_ms`**; renew a lifetime with
+  `clear(owner)` followed by `mute`.
 - **`which()` is a mirror, not a probe.** It does not increment hit counters and does not
   advance a throttle window.
 - **Matching is ASCII case-insensitive,** and only the first 512 bytes of a line are
@@ -66,7 +67,7 @@ after the fact.
 
 ```lua
 -- which rule would swallow this line?
-local id = ConsoleSilence.which("$4[ERVWHDO LUT Guard] stopped")
+local id = ConsoleSilence.which("$4[MyMod] guard stopped")
 if id then
     for _, row in ipairs(ConsoleSilence.list()) do
         if row.id == id then print(row.kind, row.pattern, row.action, row.hits) end

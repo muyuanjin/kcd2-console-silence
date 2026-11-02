@@ -145,19 +145,24 @@ xref 0x1804E3E95 in sub_1804E3D88
 | `IConsole::PrintLinePlus`（槽 27） | 不拦（未取证它的调用面） | 它只"续写上一行"，用于进度条；拦它风险大于收益 |
 | `ILog`（日志中枢） | **不拦** | 拦它会把 `kcd.log` 一起吞——作者和用户排查问题要靠这份日志 |
 
-因为确切的刷屏文本无法复现（§3），所以过滤不依赖它：
+因为确切的刷屏文本曾无法复现（§3），所以过滤不依赖它：
 
-1. 按 token 的规则（`r_ColorGradingChartImage` / `Unsupported color chart
-   dimensions` / `[ERVWHDO LUT Guard]` 节流），由模组在运行时声明；
+1. 按 token 的规则（`r_ColorGradingChartImage`）由模组在运行时声明；命中走
+   `ExecuteString` 的 `bSilentMode`，命令照跑、回显根本不产生（所以 `dropped` 不动）；
 2. **重复行折叠**：完全相同的一行在 1 s 内出现到第 3 次就折叠，不需要知道文本，
    所以刷屏文案换了也仍然成立。
+
+`Unsupported color chart dimensions` 不在可拦范围内（§3.1：走 `ILog`，槽 40），不要为它注册规则。
 
 ## 5. 未取证 / 边界
 
 - 那一行的原文**已知**（用户截图）：
   `r_ColorGradingChartImage Data//Textures//colorcharts//cinematic//3.a24.dds`。
-  没取证的是"它在本机复现"：控制台关闭时该路径不产生控制台行，所以本机跑不出这一条
-  （§3 的探针表）。`ConsoleSilence.observe(true)` 可以在出问题的机器上 30 秒内确认。
+  2026-11-03 手动取证：控制台显示（`con_show 1`）、零规则时，环形缓冲里稳定有 ~200 条
+  chart 行在滚动，`seen` 涨到 27k；在控制台敲
+  `#ConsoleSilence.mute("r_ColorGradingChartImage", { owner = "ERVWHDO" })` 后滚动停止，
+  `commandsSilenced` 涨到 852，全程 `dropped = 0`（行根本没产生，不是被丢掉）。
+  控制台关闭时不产生这一行——这就是 §3 探针表"一条都没有"的原因。
 - `PrintLinePlus` 的实际调用面没统计过，因此没有钩它。
 - 只对 1.5.6 的 `WHGame.dll` 做过实机验证；`gEnv` 定位是锚点扫描（跨版本自适应），
   vtable 槽位用"槽位必须指向 `WHGame.dll` 内"做 fail-closed 校验，但换引擎大版本

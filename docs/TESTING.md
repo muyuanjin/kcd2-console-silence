@@ -60,6 +60,7 @@ Channels:
 | T5 negative control | 5 mutually distinct lines all survive | stops "folding" from degenerating into "swallow everything" |
 | T6 real path | `ERVWHDO:SetLUTSettings(chart)` (what the menu button calls) arms the guard (1500000 ms); over 20 s no chart line is added, `dropped` does not move, the process stays alive | reproduces the author's trigger; on this build that path produces no line by itself, so the assertion is "the guard really ran, added nothing, and nothing was over-swallowed" |
 | T7b Lua surface | table registered; `mute` returns an id; `which` sees it; 12 tagged lines are swallowed; `list` reports it; `unmute` lets them through; `clear(owner)` removes them and leaves nothing behind | exercises the whole CRUD surface through the game's own script system |
+| T7 command echo (silent mode) | the guard's command is intercepted on `ExecuteString` (`commandsSilenced` grows by 20+); with the console displayed, no new chart line appears in 3 s | `commandsSilenced` is independent of whether the console is shown, which is exactly the gap that hid this path the first time; `dropped` does **not** move here — nothing is ever printed |
 | T8 stability | after 45 s the process is alive, no BugSplat report carries a fault, `consolesilence.log` has no `[ERROR]`, the hook is still installed, `rearmed = 0` | `rearmed` catches the silent failure mode where another ASI steals the slot |
 
 A crash report is identified by content, not by size: BugSplat writes a 3-byte placeholder
@@ -94,6 +95,15 @@ no Lua or DB error is logged, and its `PrintLine` hook coexists with this plugin
   only while the console is displayed (`if (!bSilentMode && GetStatus())`). The suite runs
   with the console closed, so it drives the same command through the guard and asserts on
   `commandsSilenced` instead of on the echoed line (`RE_FINDINGS.md` §3).
+
+  Done by hand instead, on 2026-11-03, and the counters are the record of it: console
+  displayed, zero rules → the ring buffer held ~200 chart lines and kept scrolling;
+  `#ConsoleSilence.mute("r_ColorGradingChartImage", { owner = "ERVWHDO" })` typed into the
+  console → the scroll stopped and `commandsSilenced` climbed to 852. **`dropped` stayed 0
+  the whole time**, because the echo is prevented in `ExecuteString` (`bSilentMode`), so no
+  line ever reaches `PrintLine` to be dropped. An assertion that waits for `dropped` to move
+  will wait forever; watch `commandsSilenced`, and use `Measure-EchoGrowth` for the visible
+  half.
 - **`PrintLinePlus`.** Its call surface was not measured, so it is not hooked.
 - **Other game builds.** Only 1.5.6 was exercised. `re/scripts/vtable_probe.py` re-checks a
   slot's semantics in one command on a new build; `gEnv` and `pConsole` are found by

@@ -15,9 +15,9 @@ Commands still execute, and **`kcd.log` is never touched** — the log keeps eve
 support cases stay diagnosable.
 
 ```
-$9[ERVWHDO LUT Guard] ...        <- 60x/second while the console is open, gone
-everything else                  <- unchanged
-kcd.log                          <- unchanged
+r_ColorGradingChartImage Data//...   <- 60x/second, the guard's own command echo, gone
+everything else                       <- unchanged
+kcd.log                               <- unchanged
 ```
 
 ## Install
@@ -39,7 +39,7 @@ A global Lua table `ConsoleSilence` is registered when the game loads its first 
 ```lua
 if ConsoleSilence then                                       -- users may not have the ASI
     ConsoleSilence.mute("r_ColorGradingChartImage")            -- literal text, case-insensitive
-    ConsoleSilence.mute("[ERVWHDO LUT Guard]", { action = "throttle:5000" })  -- one per 5 s
+    ConsoleSilence.mute("[MyMod] thread status", { action = "throttle:5000" })  -- one per 5 s
 end
 ```
 

@@ -32,22 +32,30 @@ A guard has a window: it starts when the filter changes and stops after at most 
 minutes. Let the rule follow the window:
 
 ```lua
-if ConsoleSilence then
-    -- while the guard re-applies the chart, these lines stay quiet;
-    -- the rule expires on its own after 25 minutes.
-    ConsoleSilence.mute("r_ColorGradingChartImage", { owner = "ERVWHDO", ttl_ms = 1500000 })
-    ConsoleSilence.mute("Unsupported color chart dimensions", { owner = "ERVWHDO" })
+local OWNER = "ERVWHDO"
+
+local function arm(ms)
+    if not ConsoleSilence then return end
+    ConsoleSilence.clear(OWNER)          -- required, see below: mute alone does not renew ttl_ms
+    ConsoleSilence.mute("r_ColorGradingChartImage", { owner = OWNER, ttl_ms = (ms or 1500000) + 60000 })
 end
 ```
 
 - `owner` scopes removal: `clear("ERVWHDO")` only touches your own rules.
 - `ttl_ms` is a lifetime. The rule expires by itself, so outside the window the same line
   becomes visible again — which is what you want if it signals a real failure.
+- **Renewal is not implicit.** Repeating `mute` with the same `(owner, pattern)` returns the
+  same id and leaves `ttl_ms` where it was. A mod that re-arms its guard on every filter
+  change must `clear(owner)` first, otherwise the rule dies 25 minutes after the *first*
+  arm while the guard keeps running.
+- **One warning cannot be caught at all.** `Unsupported color chart dimensions` is emitted
+  through `ILog`, not the console (`RE_FINDINGS.md` §3.1), so it never reaches `PrintLine`
+  and no rule will ever match it. Do not register one; it would only look like protection.
 
 If a status line should stay visible but must not repeat 60 times a second, throttle it:
 
 ```lua
-ConsoleSilence.mute("[ERVWHDO LUT Guard]", { action = "throttle:5000", owner = "ERVWHDO" })
+ConsoleSilence.mute("[MyMod] rebuilding sky", { action = "throttle:5000", owner = "MyMod" })
 ```
 
 `throttle:5000` lets the first line per 5 seconds through and folds the rest.
@@ -86,17 +94,17 @@ ConsoleSilence.fold(true)          -- collapse identical repeated lines
    The pattern is compiled at `mute` time, so a typo throws immediately instead of failing
    silently later.
 2. **In `wildcard`, only `*` and `?` are special** — `[ ] . ( )` are ordinary characters.
-   `ConsoleSilence.mute("[ERVWHDO LUT Guard]*", { kind = "wildcard" })` matches the
-   bracket literally, while the same string as a regex is a character class.
+   `ConsoleSilence.mute("[MyMod] guard*", { kind = "wildcard" })` matches the bracket
+   literally, while the same string as a regex is a character class.
 3. **Call `mute` at init and on state changes, not every frame.** Repeating the same
-   `(owner, pattern)` is idempotent and returns the same id, but there is no reason to
-   call it per tick.
+   `(owner, pattern)` is idempotent and returns the same id — and, by the same rule,
+   **does not extend `ttl_ms`**. To renew a lifetime, `clear(owner)` first.
 
 ## When you are not sure what to silence
 
 ```lua
 -- paste the console line verbatim and ask who would swallow it
-local id = ConsoleSilence.which("$4[ERVWHDO LUT Guard] stopped")
+local id = ConsoleSilence.which("$4[MyMod] guard stopped")
 print(id)
 ```
 
