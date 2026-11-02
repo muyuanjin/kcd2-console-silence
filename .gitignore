@@ -1,0 +1,15 @@
+/target
+/target-asi
+/.scratch
+/dist
+
+# end-to-end evidence: machine-specific logs and console dumps
+/re/out/
+
+# plugin output that must never be committed
+ConsoleSilence.status.json
+ConsoleSilence.console.txt
+consolesilence.log
+*.pdb
+*.asi
+*.asi.bak-*

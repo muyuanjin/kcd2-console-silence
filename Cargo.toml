@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kcd2-abi",
+    "crates/console-silence",
+]
+
+# 发布形态是注入进程的 ASI DLL：体积/确定性优先。
+#
+# 注意这里**不设** `panic = "abort"`：打印层钩子在帧内被调用（LUT Guard 每 16 ms
+# 一次），一旦本 crate 的代码 panic，`panic = "abort"` 会直接把游戏打死；保留
+# unwind 之后 [`kcd2_abi::guard::catch`] 能把 panic 收成"这一行照常放行"。
+[profile.release]
+opt-level = 2
+codegen-units = 1
+lto = true
+strip = "symbols"

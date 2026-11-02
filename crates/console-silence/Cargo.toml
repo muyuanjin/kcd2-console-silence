@@ -1,0 +1,20 @@
+[package]
+name = "console-silence"
+version = "0.1.0"
+edition = "2021"
+description = "KCD2 ASI plugin: decide what the engine console shows, driven from mod Lua."
+license = "MIT"
+repository = "https://github.com/muyuanjin/kcd2-console-silence"
+keywords = ["kcd2", "asi", "modding", "console"]
+categories = ["game-development"]
+publish = false
+
+[lib]
+name = "console_silence"
+crate-type = ["cdylib"]
+
+[dependencies]
+kcd2-abi = { path = "../kcd2-abi" }
+# 规则里的正则/通配：`regex::bytes` 在编译期建好自动机，匹配期零分配；
+# 它保证线性时间（没有回溯爆炸），可以安全地放在引擎打印路径上。
+regex = "1"
